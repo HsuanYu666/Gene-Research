@@ -44,7 +44,7 @@ Aa1 = pk.load(f)
 f.close()
 
 
-f = open("fs_idx_31_new","rb")
+f = open("./save_data/fs_idx_31_new","rb")
 Idx = pk.load(f)
 f.close()
 
