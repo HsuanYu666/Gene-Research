@@ -4,6 +4,8 @@ Created on Thu Apr 13 22:37:33 2017
 
 @author: Hsuan Yu 
 """
+from __future__ import division
+from __future__ import print_function
 
 import numpy as np 
 import pandas as pd
@@ -16,21 +18,21 @@ from sklearn.feature_selection import SelectPercentile
 import matplotlib.pyplot as plt
 import pickle as pk
 
-    
 #%%
 #==============================================================================
 #  Others Define functions
 #==============================================================================
-def Confusion_matrix(TestLabel,pred1):
-    cm = confusion_matrix(TestLabel,pred1)
-#    if float(cm[0][0]+cm[0][1]) >0
-    acc1 = float(cm[0][0])/float(cm[0][0]+cm[0][1])
-    acc2 = float(cm[1][1])/float(cm[1][0]+cm[1][1])
-    acc = (acc1 + acc2) /2        
-    return [acc,cm]
+def Confusion_matrix(TestLabel, pred1):
+    cm = confusion_matrix(TestLabel, pred1)
+    acc = []
+    for ind, c in enumerate(cm):
+        if np.sum(c) == 0:
+            acc.append(0)
+        else:
+            acc.append(c[ind]/ np.sum(c))
+    
+    return np.mean(acc), cm
 
-
- 
 # Load Features and Label 
 f = open("./save_data/Feature_Label","rb")
 Feature_Label = pk.load(f)
@@ -48,7 +50,7 @@ f = open("./save_data/fs_idx_31_new","rb")
 Idx = pk.load(f)
 f.close()
 
-def Train_Val(Feature,Label_):
+def Train_Val(Feature, Label_):
     kf = KFold(len(Feature),5)
     
     Acc_Train =[]; Acc_Val = []
@@ -116,3 +118,4 @@ plt.title("Learning curve  ")
 plt.xlabel("Traing Size")
 plt.ylabel("Accuracy")
 legend = ax.legend(bbox_to_anchor=(1.35, 1.05), shadow=True)
+plt.show()
