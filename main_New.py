@@ -17,6 +17,14 @@ from sklearn.feature_selection import SelectPercentile
 import matplotlib.pyplot as plt
 import pickle as pk
 from sklearn.naive_bayes import GaussianNB
+
+
+from sklearn.neighbors import KNeighborsClassifier
+
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.ensemble import RandomForestClassifier, AdaBoostClassifier
+from sklearn.naive_bayes import GaussianNB
+from sklearn.discriminant_analysis import QuadraticDiscriminantAnalysis
 #%%
 #==============================================================================
 #  Others Define functions
@@ -69,9 +77,9 @@ def Train_Val(Feature, Label_,model):
     return CV_Acc_Val, CV_Acc_Train
 
     
-models = [SVC(C =10,kernel = 'linear',class_weight ='balanced'),
-          AdaBoostClassifier(RandomForestClassifier(max_depth=5),n_estimators=200,learning_rate = 0.1),
-          LogisticRegression(C = 10,class_weight ='balanced'),
+models = [KNeighborsClassifier(3),
+          SVC(C=10, kernel='linear', class_weight='balanced'),
+          LogisticRegression(C=10, class_weight='balanced'),
           GaussianNB()]
 
 if __name__ == '__main__':
@@ -94,7 +102,7 @@ if __name__ == '__main__':
         print("============ Model"+str(num)+" ============")
         results = Train_Val(Feature,Label_,model)
         print("Accuracy of Training:",results[1],"\nAccuracy of Validation:",results[0])
-        num = num +1
+        num += 1
         
         
     # Learning Curve
