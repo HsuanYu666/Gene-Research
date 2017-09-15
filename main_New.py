@@ -12,7 +12,7 @@ import pandas as pd
 from sklearn.svm import SVC
 from sklearn.ensemble import RandomForestClassifier,AdaBoostClassifier
 from sklearn.linear_model import LogisticRegression
-from sklearn.cross_validation import KFold
+from sklearn.cross_validation import KFold, LeaveOneOut
 from sklearn.metrics import confusion_matrix
 from sklearn.feature_selection import SelectPercentile
 import matplotlib.pyplot as plt
@@ -33,36 +33,14 @@ def Confusion_matrix(TestLabel, pred1):
     
     return np.mean(acc), cm
 
-# Load Features and Label 
-f = open("./save_data/Feature_Label","rb")
-Feature_Label = pk.load(f)
-Feature = Feature_Label[0][:30]
-Label_ = Feature_Label[1][:30]
-f.close()
-
-# Load Unique gene types
-f = open("./save_data/Aa1","rb")
-Aa1 = pk.load(f)
-f.close()
-
-
-f = open("./save_data/fs_idx_31_new","rb")
-Idx = pk.load(f)
-f.close()
-
 def Train_Val(Feature, Label_):
-    kf = KFold(len(Feature),5)
+    loo = LeaveOneOut(len(Feature))
+    Acc_Train, Acc_Val = [], []
     
-    Acc_Train =[]; Acc_Val = []
-    for train_index,test_index in kf:
-        TrainSet,TestSet = Feature[train_index], Feature[test_index]
-        TrainLabel,TestLabel = Label_[train_index], Label_[test_index]
-       
-    #==============================================================================
-    #   Special Idx
-    #==============================================================================
-        TrainSet = TrainSet[:,Idx]
-        TestSet = TestSet[:,Idx]
+    for train_index, test_index in loo:
+        TrainSet, TestSet = Feature[train_index], Feature[test_index]
+        TrainLabel, TestLabel = Label_[train_index], Label_[test_index]
+    
     #==============================================================================
     #   use best percentile of fs to train again
     #==============================================================================
@@ -75,47 +53,50 @@ def Train_Val(Feature, Label_):
     #==============================================================================
     #   start training model (compare different algo.)
     #==============================================================================
-        svm_model = SVC(kernel = 'linear',class_weight ='balanced' ) 
-#        svm_model = LogisticRegression()
-#        svm_model = AdaBoostClassifier() 
-        svm_model.fit( TrainSet, TrainLabel )
+        model = SVC(kernel='linear', class_weight='balanced') 
+#        model = LogisticRegression()
+#        model = AdaBoostClassifier() 
+        model.fit(TrainSet, TrainLabel)
     
-        
     #==============================================================================
     #   get predictions
     #==============================================================================
-        pred_val = svm_model.predict(TestSet)   
-        pred_train = svm_model.predict(TrainSet) 
+        pred_val = model.predict(TestSet)   
+        pred_train = model.predict(TrainSet) 
         
-        Acc_Val.append(Confusion_matrix(TestLabel,np.asarray(pred_val))[0])
-        Acc_Train.append(Confusion_matrix(TrainLabel,np.asarray(pred_train))[0])
+        Acc_Val.append(Confusion_matrix(TestLabel, np.asarray(pred_val))[0])
+        Acc_Train.append(Confusion_matrix(TrainLabel, np.asarray(pred_train))[0])
     
     CV_Acc_Val = np.mean(Acc_Val)   
     CV_Acc_Train = np.mean(Acc_Train)  
     
-    return [CV_Acc_Val,CV_Acc_Train]
- 
-   
-CV_Acc_Val = []
-CV_Acc_Train = []
-for i in range(4):
-#    print(15+(5*i))
-    results = Train_Val(Feature[:15+(5*i)],Label_[:15+(5*i)])
-    print("--------Training Size:"+str(15+(5*i))+"-------")
-    print("Accuracy of Training:",results[1],"\nAccuracy of Validation:",results[0])
-    
-    CV_Acc_Val.append(results[0])
-    CV_Acc_Train.append(results[1])
-        
-# plot the learning curve    
+    return CV_Acc_Val, CV_Acc_Train
 
-Desire_Acc = [0.9]*len(CV_Acc_Val)
-fig, ax = plt.subplots()
-ax.plot(CV_Acc_Train, 'b-', label='Training')
-ax.plot(CV_Acc_Val, 'g-', label='Validation')
-ax.plot(Desire_Acc, 'r--', label='Desire')
-plt.title("Learning curve  ")
-plt.xlabel("Traing Size")
-plt.ylabel("Accuracy")
-legend = ax.legend(bbox_to_anchor=(1.35, 1.05), shadow=True)
-plt.show()
+if __name__ == '__main__':
+    # Load Features and Label and fs_Index
+    Feature_Label = pk.load(open("./save_data/Feature_Label","rb"))
+    Idx = pk.load(open("./save_data/fs_idx_31_new","rb"))
+    
+    Feature = Feature_Label[0][:30][:, Idx]
+    Label_ = Feature_Label[1][:30]
+    
+    CV_Acc_Val, CV_Acc_Train = [], []
+    for i in range(4):
+        results = Train_Val(Feature[:15+(5*i)], Label_[:15+(5*i)])
+        print("--------Training Size:"+str(15+(5*i))+"-------")
+        print("Accuracy of Training:",results[1],"\nAccuracy of Validation:",results[0])
+        
+        CV_Acc_Val.append(results[0])
+        CV_Acc_Train.append(results[1])
+        
+    # plot the learning curve    
+    Desire_Acc = [0.9]*len(CV_Acc_Val)
+    fig, ax = plt.subplots()
+    ax.plot(CV_Acc_Train, 'b-', label='Training')
+    ax.plot(CV_Acc_Val, 'g-', label='Validation')
+    ax.plot(Desire_Acc, 'r--', label='Desire')
+    plt.title("Learning curve  ")
+    plt.xlabel("Training Size")
+    plt.ylabel("Accuracy")
+    legend = ax.legend(bbox_to_anchor=(1.35, 1.05), shadow=True)
+    plt.show()
