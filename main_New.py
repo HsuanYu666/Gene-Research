@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 """
 Created on Thu Apr 13 22:37:33 2017
-
 @author: Hsuan Yu 
 """
 from __future__ import division
@@ -17,7 +16,7 @@ from sklearn.metrics import confusion_matrix
 from sklearn.feature_selection import SelectPercentile
 import matplotlib.pyplot as plt
 import pickle as pk
-
+from sklearn.naive_bayes import GaussianNB
 #%%
 #==============================================================================
 #  Others Define functions
@@ -33,7 +32,7 @@ def Confusion_matrix(TestLabel, pred1):
     
     return np.mean(acc), cm
 
-def Train_Val(Feature, Label_):
+def Train_Val(Feature, Label_,model):
     loo = LeaveOneOut(len(Feature))
     Acc_Train, Acc_Val = [], []
     
@@ -51,11 +50,8 @@ def Train_Val(Feature, Label_):
 #        TestSet = fsModel.transform(TestSet)
     
     #==============================================================================
-    #   start training model (compare different algo.)
+    #   start training model 
     #==============================================================================
-        model = SVC(kernel='linear', class_weight='balanced') 
-#        model = LogisticRegression()
-#        model = AdaBoostClassifier() 
         model.fit(TrainSet, TrainLabel)
     
     #==============================================================================
@@ -72,31 +68,52 @@ def Train_Val(Feature, Label_):
     
     return CV_Acc_Val, CV_Acc_Train
 
+    
+models = [SVC(C =10,kernel = 'linear',class_weight ='balanced'),
+          AdaBoostClassifier(RandomForestClassifier(max_depth=5),n_estimators=200,learning_rate = 0.1),
+          LogisticRegression(C = 10,class_weight ='balanced'),
+          GaussianNB()]
+
 if __name__ == '__main__':
     # Load Features and Label and fs_Index
     Feature_Label = pk.load(open("./save_data/Feature_Label","rb"))
-    Idx = pk.load(open("./save_data/fs_idx_31_new","rb"))
+    Idx1 = pk.load(open("./save_data/Idx_Backward","rb")) 
+    Idx2 = pk.load(open("./save_data/Idx_Forward","rb"))   
     
-    Feature = Feature_Label[0][:30][:, Idx]
-    Label_ = Feature_Label[1][:30]
-    
-    CV_Acc_Val, CV_Acc_Train = [], []
-    for i in range(4):
-        results = Train_Val(Feature[:15+(5*i)], Label_[:15+(5*i)])
-        print("--------Training Size:"+str(15+(5*i))+"-------")
+#    Idx = [val for val in Idx1 if val in Idx2]            # 6 genes 
+    Idx = pk.load(open("./save_data/fs_idx_31_new","rb"))   # 48 genes
+        
+    # Check what's gene names
+#    All_Unique_Genes = pk.load(open("./save_data/Aa1","rb"))
+#    print(All_Unique_Genes[Idx])
+
+    Feature = Feature_Label[0][:31][:, Idx]
+    Label_ = Feature_Label[1][:31]
+    num = 1 
+    for model in models:
+        print("============ Model"+str(num)+" ============")
+        results = Train_Val(Feature,Label_,model)
         print("Accuracy of Training:",results[1],"\nAccuracy of Validation:",results[0])
+        num = num +1
         
-        CV_Acc_Val.append(results[0])
-        CV_Acc_Train.append(results[1])
         
-    # plot the learning curve    
-    Desire_Acc = [0.9]*len(CV_Acc_Val)
-    fig, ax = plt.subplots()
-    ax.plot(CV_Acc_Train, 'b-', label='Training')
-    ax.plot(CV_Acc_Val, 'g-', label='Validation')
-    ax.plot(Desire_Acc, 'r--', label='Desire')
-    plt.title("Learning curve  ")
-    plt.xlabel("Training Size")
-    plt.ylabel("Accuracy")
-    legend = ax.legend(bbox_to_anchor=(1.35, 1.05), shadow=True)
-    plt.show()
+    # Learning Curve
+#        CV_Acc_Val, CV_Acc_Train = [], []
+#        for i in range(4):
+#            results = Train_Val(Feature[:15+(5*i)], Label_[:15+(5*i)],model)
+#            print("--------Training Size:"+str(15+(5*i))+"-------")
+#            print("Accuracy of Training:",results[1],"\nAccuracy of Validation:",results[0])      
+#            CV_Acc_Val.append(results[0])
+#            CV_Acc_Train.append(results[1])        
+#        # plot the learning curve    
+#        Desire_Acc = [0.9]*len(CV_Acc_Val)
+#        fig, ax = plt.subplots()
+#        ax.plot(CV_Acc_Train, 'b-', label='Training')
+#        ax.plot(CV_Acc_Val, 'g-', label='Validation')
+#        ax.plot(Desire_Acc, 'r--', label='Desire')
+#        plt.title("Learning curve  ")
+#        plt.xlabel("Training Size")
+#        plt.ylabel("Accuracy")
+#        legend = ax.legend(bbox_to_anchor=(1.35, 1.05), shadow=True)
+#        plt.show()
+
