@@ -65,5 +65,5 @@ if __name__ == '__main__':
     for clf in models:
       clf.fit(Feature, Label_)
       predict = clf.predict(Feature_test)
-      print(Confusion_matrix(predict, Label_test)[0])
-
+      print(Confusion_matrix(Label_test, predict)[0])
+      print(Confusion_matrix(Label_test, predict)[1])
