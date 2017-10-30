@@ -24,9 +24,20 @@ from sklearn.ensemble import RandomForestClassifier, AdaBoostClassifier
 from sklearn.naive_bayes import GaussianNB
 from sklearn.discriminant_analysis import QuadraticDiscriminantAnalysis
 
-models = [KNeighborsClassifier(3),
-          SVC(C=10, kernel='linear', class_weight='balanced'),
-          LogisticRegression(C=10, class_weight='balanced'),
+def Confusion_matrix(TestLabel, pred1):
+    cm = confusion_matrix(TestLabel, pred1)
+    acc = []
+    for ind, c in enumerate(cm):
+        if np.sum(c) == 0:
+            acc.append(0)
+        else:
+            acc.append(c[ind]/ np.sum(c))
+    
+    return np.mean(acc), cm
+
+models = [KNeighborsClassifier(5),
+          SVC(C=1, kernel='linear', class_weight='balanced'),
+          LogisticRegression(C=0.01, class_weight='balanced'),
           GaussianNB()]
 
 if __name__ == '__main__':
@@ -47,10 +58,12 @@ if __name__ == '__main__':
 	
 	# Load test data
     Feature_test = pk.load(open("./save_data/Mutant_allele_20171026","rb"))
-    Feature_test = Feature_test[:, Idx]
+    Feature_test = Feature_test[:40][:, Idx]
+    Label_test = np.array([0,0,0,0,1,0,0,0,0,0,0,0,0,1,0,0,0,1,0,0,
+                           0,0,1,0,0,0,1,0,1,0,1,1,0,1,0,0,0,0,1,1])
 	
-	for clf in models:
-		clf.fit(Feature, Label_)
-		predict = clf.predict(Feature_test)
-		print(predict)
+    for clf in models:
+      clf.fit(Feature, Label_)
+      predict = clf.predict(Feature_test)
+      print(Confusion_matrix(predict, Label_test)[0])
 
